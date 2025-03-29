@@ -101,17 +101,18 @@ fun TimerWidget(seconds: Int) {
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            IconButton(onClick = {
-                time.intValue = seconds
-                isRunning.value = false
-            }) {
-                Icon(
-                    painterResource(R.drawable.ic_stop),
-                    contentDescription = "Close Timer",
-                    tint = Color.Red,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
+            if (isRunning.value)
+                IconButton(onClick = {
+                    time.intValue = seconds
+                    isRunning.value = false
+                }) {
+                    Icon(
+                        painterResource(R.drawable.ic_timer_reset),
+                        contentDescription = "Close Timer",
+                        tint = Color.Red,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
 
             Spacer(modifier = Modifier.width(30.dp))
         }
