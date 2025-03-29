@@ -3,25 +3,31 @@ package com.matrix.nowbar.widgets
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import com.matrix.nowbar.controller.DragDirection
 import com.matrix.nowbar.controller.NowBarDragController
 import com.matrix.nowbar.extensions.clamp
 import com.matrix.nowbar.extensions.mapRange
@@ -29,59 +35,136 @@ import com.matrix.nowbar.metrics.NowBarMetrics
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-
 @Composable
 fun NowBarWidget(
     innerPadding: PaddingValues,
-    widgets: List<@Composable () -> Unit>,
+    widgets: MutableList<NowBarComponent>,
     modifier: Modifier = Modifier,
     metrics: NowBarMetrics = NowBarMetrics(),
     dragDirection: NowBarDragController = NowBarDragController.DRAG_UP
 ) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp.toFloat()
     val scope = rememberCoroutineScope()
+    val nextScale = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
+    val offsetX = remember { Animatable(0f) }
+    val nextY = remember { Animatable(-1f) }
     val topIndex = remember { mutableIntStateOf(0) }
-
-    val count = widgets.size
+    var dragState = remember { mutableStateOf(DragDirection.NONE) }
+    var widgets = remember { mutableStateListOf(*widgets.toTypedArray()) }
+    var count = widgets.size
 
     Box(
-        modifier = modifier.pointerInput(Unit) {
-            detectVerticalDragGestures(
-                onVerticalDrag = { change, dragAmount ->
-                    change.consume()
-                    scope.launch { offsetY.snapTo(offsetY.value + dragAmount) }
-                },
-                onDragEnd = {
-                    scope.launch {
-                        if (offsetY.value < -50 && (dragDirection == NowBarDragController.DRAG_UP || dragDirection == NowBarDragController.DRAG_VERTICALLY)) {
-                            val switchable = offsetY.value < -150
-                            if (switchable) {
-                                offsetY.animateTo(
-                                    metrics.translationClamp.first,
-                                    tween(300 * metrics.animationMultiplier)
+        modifier = modifier
+            .padding(innerPadding)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = {
+                        dragState.value = DragDirection.NONE
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        scope.launch {
+                            if (dragState.value == DragDirection.NONE) {
+                                dragState.value =
+                                    if (abs(dragAmount.x) > abs(dragAmount.y)) DragDirection.HORIZONTAL
+                                    else DragDirection.VERTICAL
+                            }
+
+                            if (dragState.value == DragDirection.HORIZONTAL) {
+                                offsetX.snapTo(offsetX.value + dragAmount.x)
+                            }
+
+                            if (dragState.value == DragDirection.VERTICAL) {
+                                offsetY.snapTo(offsetY.value + dragAmount.y)
+                            }
+                        }
+
+                    },
+                    onDragEnd = {
+                        scope.launch {
+                            when (dragState.value) {
+                                DragDirection.HORIZONTAL -> {
+                                    var topWidget = try {
+                                        widgets[topIndex.intValue]
+                                    } catch (_: Exception) {
+                                        widgets[if (topIndex.intValue >= widgets.size) 0 else topIndex.intValue + 1]
+                                    }
+                                    when {
+                                        offsetX.value > screenWidth * 0.5 && topWidget.isRemovable -> {
+                                            nextScale.snapTo(1f - 1 * 0.12f)
+                                            launch {
+                                                nextY.animateTo(
+                                                    offsetY.value,
+                                                    tween(800 * metrics.animationMultiplier)
+                                                )
+                                            }
+                                            launch {
+                                                nextScale.animateTo(
+                                                    1f,
+                                                    tween(800 * metrics.animationMultiplier)
+                                                )
+                                            }
+                                            offsetX.animateTo(
+                                                screenWidth * 3,
+                                                tween(800 * metrics.animationMultiplier)
+                                            )
+                                            nextY.snapTo(-1f)
+                                            nextScale.snapTo(0f)
+                                            offsetX.snapTo(0f)
+                                            widgets.remove(topWidget)
+                                            count = widgets.size
+                                        }
+
+                                        else -> offsetX.animateTo(0f, tween(800))
+                                    }
+                                }
+
+                                else -> if (
+                                    offsetY.value < -50 &&
+                                    (dragDirection == NowBarDragController.DRAG_UP || dragDirection == NowBarDragController.DRAG_VERTICALLY)
+                                ) {
+                                    val switchable = offsetY.value < -150
+                                    if (switchable) {
+                                        offsetY.animateTo(
+                                            metrics.translationClamp.first,
+                                            tween(300 * metrics.animationMultiplier)
+                                        )
+                                        offsetY.animateTo(0f, tween(200))
+                                    } else
+                                        offsetY.animateTo(
+                                            0f,
+                                            tween(800 * metrics.animationMultiplier)
+                                        )
+                                    if (switchable)
+                                        topIndex.intValue = (topIndex.intValue + 1) % count
+                                } else if (
+                                    offsetY.value > 50 &&
+                                    (dragDirection == NowBarDragController.DRAG_DOWN || dragDirection == NowBarDragController.DRAG_VERTICALLY)
+                                ) {
+                                    val switchable = offsetY.value > 150
+                                    if (switchable) {
+                                        offsetY.animateTo(
+                                            metrics.translationClamp.second,
+                                            tween(300 * metrics.animationMultiplier)
+                                        )
+                                        offsetY.animateTo(0f, tween(200))
+                                    } else
+                                        offsetY.animateTo(
+                                            0f,
+                                            tween(800 * metrics.animationMultiplier)
+                                        )
+                                    if (switchable)
+                                        topIndex.intValue = (topIndex.intValue - 1 + count) % count
+                                } else offsetY.animateTo(
+                                    0f,
+                                    tween(800 * metrics.animationMultiplier)
                                 )
-                                offsetY.animateTo(0f, tween(200))
-                            } else
-                                offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
-                            if (switchable)
-                                topIndex.intValue = (topIndex.intValue + 1) % count
-                        } else if (offsetY.value > 50 && (dragDirection == NowBarDragController.DRAG_DOWN || dragDirection == NowBarDragController.DRAG_VERTICALLY)) {
-                            val switchable = offsetY.value > 150
-                            if (switchable) {
-                                offsetY.animateTo(
-                                    metrics.translationClamp.second,
-                                    tween(300 * metrics.animationMultiplier)
-                                )
-                                offsetY.animateTo(0f, tween(200))
-                            } else
-                                offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
-                            if (switchable)
-                                topIndex.intValue = (topIndex.intValue - 1 + count) % count
-                        } else offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
+                            }
+                        }
                     }
-                }
-            )
-        },
+                )
+            },
         contentAlignment = Alignment.Center,
     ) {
         val reordered = (0 until count).map { (topIndex.intValue + it) % count }
@@ -95,24 +178,33 @@ fun NowBarWidget(
                 Box(
                     modifier = Modifier
                         .graphicsLayer {
-                            translationY =
-                                (if (isTop) offsetY.value else if (i < 4) 25f * i * 1.1f else 25f * 1.1f).clamp(
-                                    metrics.translationClamp
-                                )
+                            translationY = (
+                                    if (isTop) offsetY.value
+                                    else if (isNext && nextY.value != -1f) nextY.value
+                                    else if (nextY.value != -1f && i < 5) 25f * (i - 1) * 1.1f
+                                    else if (i < 4) 25f * i * 1.1f
+                                    else 25f * 1.1f
+                                    ).clamp(metrics.translationClamp)
+                            translationX = if (isTop) offsetX.value else 0f
                         }
                         .fillMaxWidth(metrics.fillMaxWidthOffset)
                         .height(metrics.widgetHeight)
                         .scale(
                             when {
                                 isTop -> abs(offsetY.value).mapRange(200f, 0f, 0.9f, 1f)
-                                isNext -> abs(offsetY.value).mapRange(
+                                isNext -> if (nextScale.value > 0) nextScale.value else abs(offsetY.value).mapRange(
                                     0f,
                                     200f,
                                     1f - i * 0.12f,
                                     1.0f
                                 )
 
-                                else -> abs(offsetY.value).mapRange(
+                                else -> if (nextScale.value > 0) abs(offsetY.value).mapRange(
+                                    0f,
+                                    200f,
+                                    1f - (i - 1) * 0.12f,
+                                    1f - (i - 1) * 0.12f + if (i < 5) 0.02f else 0f
+                                ) else abs(offsetY.value).mapRange(
                                     0f,
                                     200f,
                                     1f - i * 0.12f,
@@ -126,10 +218,11 @@ fun NowBarWidget(
                             ambientColor = Color.Black.copy(alpha = 0.8f)
                         )
                         .clip(RoundedCornerShape(metrics.cornerRadius))
-                        .background(Color.Gray),
+                        .background(Color.Gray)
+                        .alpha(if (nextScale.value > 0) nextScale.value else 1f),
                     contentAlignment = Alignment.Center,
                 ) {
-                    widgets[idx].invoke()
+                    widgets[idx].widget.invoke()
                 }
             }
         }

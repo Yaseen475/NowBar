@@ -20,6 +20,7 @@ import com.matrix.nowbar.controller.NotificationColorController
 import com.matrix.nowbar.ui.theme.NowBarTheme
 import com.matrix.nowbar.widgets.MediaPlayerWidget
 import com.matrix.nowbar.widgets.NotificationWidget
+import com.matrix.nowbar.widgets.NowBarComponent
 import com.matrix.nowbar.widgets.NowBarWidget
 import com.matrix.nowbar.widgets.RoutinesWidget
 import com.matrix.nowbar.widgets.SportsWidget
@@ -33,12 +34,17 @@ class MainActivity : ComponentActivity() {
         R.drawable.renegade to "Renegade_Axwell /\\ Ingrosso"
     )
 
-    val widgets = listOf<@Composable () -> Unit>(
-        { MediaPlayerWidget(music, PaddingValues.Absolute(0.dp)) },
-        { TimerWidget(seconds = 65) },
-        { RoutinesWidget(content = "At work and 2 others running") },
-        { SportsWidget("ICC Champions Trophy 2025 (Final)\nIND vs NZ", "IND won by 4 wickets") },
-        {
+    val widgets = mutableListOf<NowBarComponent>(
+        NowBarComponent({ MediaPlayerWidget(music, PaddingValues.Absolute(0.dp)) }, isRemovable = false),
+        NowBarComponent({ TimerWidget(seconds = 65) }),
+        NowBarComponent({ RoutinesWidget(content = "At work and 2 others running") }),
+        NowBarComponent({
+            SportsWidget(
+                "ICC Champions Trophy 2025 (Final)\nIND vs NZ",
+                "IND won by 4 wickets"
+            )
+        }),
+        NowBarComponent({
             NotificationWidget(
                 R.drawable.ic_linkedin,
                 "LinkedIn",
@@ -52,8 +58,8 @@ class MainActivity : ComponentActivity() {
                     )
                 )
             )
-        },
-        {
+        }),
+        NowBarComponent({
             NotificationWidget(
                 R.drawable.ic_flipkart,
                 "Arriving today",
@@ -68,7 +74,7 @@ class MainActivity : ComponentActivity() {
                     )
                 )
             )
-        }
+        })
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
