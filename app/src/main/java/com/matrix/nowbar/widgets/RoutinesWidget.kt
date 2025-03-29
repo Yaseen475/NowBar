@@ -14,8 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,8 +30,6 @@ fun RoutinesWidget(
     title: String = "Bixby Routines",
     content: String
 ) {
-    var playOrPauseButton = remember { mutableStateOf(R.drawable.ic_pause) }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -51,9 +47,7 @@ fun RoutinesWidget(
             Icon(
                 painterResource(R.drawable.ic_routines),
                 contentDescription = "Play/Pause",
-                tint = if (playOrPauseButton.value == R.drawable.ic_pause) Color.White else Color(
-                    0xFF6E85B3
-                ),
+                tint = Color.White,
                 modifier = Modifier.size(40.dp)
             )
 
@@ -71,9 +65,7 @@ fun RoutinesWidget(
 
                 Text(
                     content,
-                    color = if (playOrPauseButton.value == R.drawable.ic_pause) Color.White else Color(
-                        0xFF6E85B3
-                    ),
+                    color = Color.White,
                     fontSize = 16.sp,
                     lineHeight = 16.sp,
                     fontWeight = FontWeight.W700

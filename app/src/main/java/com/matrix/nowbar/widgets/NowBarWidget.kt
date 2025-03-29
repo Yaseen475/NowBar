@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,16 +22,22 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
+import com.matrix.nowbar.controller.NowBarDragController
 import com.matrix.nowbar.extensions.clamp
-import com.matrix.nowbar.metrics.Dimensions
 import com.matrix.nowbar.extensions.mapRange
+import com.matrix.nowbar.metrics.NowBarMetrics
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 
 @Composable
-fun NowBarWidget(innerPadding: PaddingValues, widgets: List<@Composable () -> Unit>) {
+fun NowBarWidget(
+    innerPadding: PaddingValues,
+    widgets: List<@Composable () -> Unit>,
+    modifier: Modifier = Modifier,
+    metrics: NowBarMetrics = NowBarMetrics(),
+    dragDirection: NowBarDragController = NowBarDragController.DRAG_UP
+) {
     val scope = rememberCoroutineScope()
     val offsetY = remember { Animatable(0f) }
     val topIndex = remember { mutableIntStateOf(0) }
@@ -40,29 +45,43 @@ fun NowBarWidget(innerPadding: PaddingValues, widgets: List<@Composable () -> Un
     val count = widgets.size
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectVerticalDragGestures(
-                    onVerticalDrag = { change, dragAmount ->
-                        change.consume()
-                        scope.launch { offsetY.snapTo(offsetY.value + dragAmount) }
-                    },
-                    onDragEnd = {
-                        scope.launch {
-                            if (offsetY.value < -50) {
-                                offsetY.animateTo(-200f, tween(300))
-                                offsetY.animateTo(0f, tween(100))
+        modifier = modifier.pointerInput(Unit) {
+            detectVerticalDragGestures(
+                onVerticalDrag = { change, dragAmount ->
+                    change.consume()
+                    scope.launch { offsetY.snapTo(offsetY.value + dragAmount) }
+                },
+                onDragEnd = {
+                    scope.launch {
+                        if (offsetY.value < -50 && (dragDirection == NowBarDragController.DRAG_UP || dragDirection == NowBarDragController.DRAG_VERTICALLY)) {
+                            val switchable = offsetY.value < -150
+                            if (switchable) {
+                                offsetY.animateTo(
+                                    metrics.translationClamp.first,
+                                    tween(300 * metrics.animationMultiplier)
+                                )
+                                offsetY.animateTo(0f, tween(200))
+                            } else
+                                offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
+                            if (switchable)
                                 topIndex.intValue = (topIndex.intValue + 1) % count
-                            } else if (offsetY.value > 50) {
-                                offsetY.animateTo(200f, tween(300))
-                                offsetY.animateTo(0f, tween(100))
+                        } else if (offsetY.value > 50 && (dragDirection == NowBarDragController.DRAG_DOWN || dragDirection == NowBarDragController.DRAG_VERTICALLY)) {
+                            val switchable = offsetY.value > 150
+                            if (switchable) {
+                                offsetY.animateTo(
+                                    metrics.translationClamp.second,
+                                    tween(300 * metrics.animationMultiplier)
+                                )
+                                offsetY.animateTo(0f, tween(200))
+                            } else
+                                offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
+                            if (switchable)
                                 topIndex.intValue = (topIndex.intValue - 1 + count) % count
-                            } else offsetY.animateTo(0f, tween(200))
-                        }
+                        } else offsetY.animateTo(0f, tween(800 * metrics.animationMultiplier))
                     }
-                )
-            },
+                }
+            )
+        },
         contentAlignment = Alignment.Center,
     ) {
         val reordered = (0 until count).map { (topIndex.intValue + it) % count }
@@ -77,10 +96,12 @@ fun NowBarWidget(innerPadding: PaddingValues, widgets: List<@Composable () -> Un
                     modifier = Modifier
                         .graphicsLayer {
                             translationY =
-                                (if (isTop) offsetY.value else 25f * i * 1.1f).clamp(-400f, 400f)
+                                (if (isTop) offsetY.value else if (i < 4) 25f * i * 1.1f else 25f * 1.1f).clamp(
+                                    metrics.translationClamp
+                                )
                         }
-                        .fillMaxWidth(0.9f)
-                        .height(80.dp)
+                        .fillMaxWidth(metrics.fillMaxWidthOffset)
+                        .height(metrics.widgetHeight)
                         .scale(
                             when {
                                 isTop -> abs(offsetY.value).mapRange(200f, 0f, 0.9f, 1f)
@@ -94,17 +115,17 @@ fun NowBarWidget(innerPadding: PaddingValues, widgets: List<@Composable () -> Un
                                 else -> abs(offsetY.value).mapRange(
                                     0f,
                                     200f,
-                                    1f - (i + 1) * 0.08f,
-                                    1f - i * 0.12f
+                                    1f - i * 0.12f,
+                                    1f - i * 0.12f + if (i < 4) 0.02f else 0f
                                 )
                             }
                         )
                         .shadow(
-                            Dimensions.ShadowElevation,
-                            RoundedCornerShape(Dimensions.BorderRadius),
+                            metrics.shadowElevation,
+                            RoundedCornerShape(metrics.cornerRadius),
                             ambientColor = Color.Black.copy(alpha = 0.8f)
                         )
-                        .clip(RoundedCornerShape(Dimensions.BorderRadius))
+                        .clip(RoundedCornerShape(metrics.cornerRadius))
                         .background(Color.Gray),
                     contentAlignment = Alignment.Center,
                 ) {

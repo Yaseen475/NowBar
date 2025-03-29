@@ -1,8 +1,10 @@
 package com.matrix.nowbar.extensions
 
-fun Float.clamp(min: Float, max: Float) = if (this < min) min else if (this > max) max else this
+internal fun Float.clamp(min: Float, max: Float) = if (this < min) min else if (this > max) max else this
 
-fun Float.mapRange(
+internal fun Float.clamp(range: Pair<Float, Float>) = clamp(range.first, range.second)
+
+internal fun Float.mapRange(
     fromMin: Float,
     fromMax: Float,
     toMin: Float,
