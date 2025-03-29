@@ -31,6 +31,11 @@ import com.matrix.nowbar.metrics.Dimensions
 import java.lang.String.format
 import kotlin.math.abs
 
+/**
+ * Customizable timer widget that displays a title and content.
+ * @param seconds The time in seconds.
+ * @author Saurav Sajeev
+ */
 @Composable
 fun TimerWidget(seconds: Int) {
 

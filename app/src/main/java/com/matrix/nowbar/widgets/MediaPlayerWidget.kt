@@ -35,6 +35,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.matrix.nowbar.metrics.Dimensions
 
+/**
+ * Media player widget that supports playing music and providing sharing functionality.
+ * @param music A list of music resources with their corresponding titles.
+ * @param innerPadding The inner padding values for the widget.
+ * @author Saurav Sajeev
+ */
 @Composable
 fun MediaPlayerWidget(music: List<Pair<Int, String>>, innerPadding: PaddingValues) {
 

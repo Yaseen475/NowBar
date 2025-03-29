@@ -26,6 +26,14 @@ import androidx.compose.ui.unit.sp
 import com.matrix.nowbar.controller.NotificationColorController
 import com.matrix.nowbar.metrics.Dimensions
 
+/**
+ * Customizable notification widget that displays an icon, title, and content.
+ * @param icon The resource ID of the icon to be displayed.
+ * @param title The title of the notification.
+ * @param content The content of the notification.
+ * @param colorController The color controller for the notification.
+ * @author Saurav Sajeev
+ */
 @Composable
 fun NotificationWidget(
     icon: Int,

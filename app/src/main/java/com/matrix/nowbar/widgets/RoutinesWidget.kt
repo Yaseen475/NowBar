@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.sp
 import com.matrix.nowbar.R
 import com.matrix.nowbar.metrics.Dimensions
 
+/**
+ * Customizable routines widget that displays a title and content.
+ * @param title The title of the widget.
+ * @param content The content of the widget.
+ * @author Saurav Sajeev
+ */
 @Composable
 fun RoutinesWidget(
     title: String = "Bixby Routines",

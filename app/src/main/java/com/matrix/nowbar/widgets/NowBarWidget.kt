@@ -35,6 +35,15 @@ import com.matrix.nowbar.metrics.NowBarMetrics
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
+/**
+ * NowBar Widget inspired from Samsung's Now Bar lockscreen interactive widget.
+ * @param innerPadding The innerPadding for the widget.
+ * @param widgets The list of widgets to be displayed. Accepts NowBarComponent type widgets. You can make your own NowBarComponent widget from NowBarComponent class.
+ * @param modifier The modifier for the widget.
+ * @param metrics The custom metrics object for the widget.
+ * @param dragDirection The drag direction which is to be supported by the widget. Accepts values from NowBarDragController enum.
+ * @author Saurav Sajeev
+ */
 @Composable
 fun NowBarWidget(
     innerPadding: PaddingValues,
@@ -91,7 +100,7 @@ fun NowBarWidget(
                                         widgets[if (topIndex.intValue >= widgets.size) 0 else topIndex.intValue + 1]
                                     }
                                     when {
-                                        offsetX.value > screenWidth * 0.5 && topWidget.isRemovable -> {
+                                        offsetX.value > screenWidth * 0.5 && topWidget.dismissible -> {
                                             nextScale.snapTo(1f - 1 * 0.12f)
                                             launch {
                                                 nextY.animateTo(
