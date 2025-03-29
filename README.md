@@ -3,6 +3,14 @@ This project is a fan-made recreation of Samsung's Now Bar from One UI 7, built 
 
 ---
 
+<div style="display: flex; justify-content: center; gap: 10px;">
+    <img src="./images/sc1.png" alt="Screenshot 1" width="200"/>
+    <img src="./images/sc2.png" alt="Screenshot 2" width="200"/>
+    <img src="./images/sc3.png" alt="Screenshot 3" width="200"/>
+    <img src="./images/sc4.png" alt="Screenshot 3" width="200"/>
+    <img src="./images/sc5.png" alt="Screenshot 3" width="200"/>
+</div>
+
 ## **NowBarWidget**
 The **NowBarWidget** is inspired by Samsung's Now Bar lock screen interactive widget. It's a customizable widget system, providing gesture-based interactions and dynamic scaling effects. Below is the detailed API documentation:
 
