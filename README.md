@@ -12,7 +12,7 @@ This project is a fan-made recreation of Samsung's Now Bar from One UI 7, built 
 </div>
 
 ## **NowBarWidget**
-The **NowBarWidget** is inspired by Samsung's Now Bar lock screen interactive widget. It's a customizable widget system, providing gesture-based interactions and dynamic scaling effects. Below is the detailed API documentation:
+The **NowBarWidget** is inspired by Samsung's Now Bar lock screen interactive widget. It's a customizable widget system, providing gesture-based interactions and dynamic widgets. Below is the detailed API documentation:
 
 ### **Parameters**
 ```kotlin
